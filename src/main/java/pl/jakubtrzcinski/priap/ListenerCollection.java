@@ -15,6 +15,7 @@ import java.util.Map;
 class ListenerCollection {
     private final Map<Class, List<EventListener>> listeners = new HashMap<>();
 
+
     public ListenerCollection(List<EventListener> listeners) {
         listeners.forEach(this::register);
     }
@@ -25,7 +26,7 @@ class ListenerCollection {
         );
     }
     public void register(EventListener eventListener){
-        var clazz = eventListener.getClass();
+        var clazz = GenericsUtils.getGeneric(eventListener);
         if(!listeners.containsKey(clazz)){
             listeners.put(clazz, new LinkedList<>());
         }

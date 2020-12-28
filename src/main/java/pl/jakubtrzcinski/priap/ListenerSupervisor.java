@@ -1,17 +1,12 @@
 package pl.jakubtrzcinski.priap;
 
 import lombok.RequiredArgsConstructor;
-import pl.jakubtrzcinski.priap.api.EventErrorHandler;
-import pl.jakubtrzcinski.priap.dto.PriapMessage;
+import pl.jakubtrzcinski.priap.api.EventListener;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.function.Supplier;
 
 /**
  * @author Jakub Trzcinski kuba@valueadd.pl
@@ -20,27 +15,29 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 class ListenerSupervisor implements Closeable, Runnable {
 
+    private final String appName;
+
     private final int threadsCount;
 
-    private final Supplier<PriapMessage> messageSupplier;
+    private final MessagingAdapter messagingAdapter;
 
-    private final PriapMessageExecutor executor;
-
-    private final EventErrorHandler errorHandler;
+    private final List<EventListener> listeners;
 
     private final List<ListenerThread> threads = new LinkedList<>();
 
 
     @Override
     public void run() {
+        messagingAdapter.initExchange();
+        messagingAdapter.declareQueueWithHospitalAndBindToExchange();
         if(!threads.isEmpty()){
             return;
         }
         for (int i = 0; i < threadsCount; i++) {
             var thread = new ListenerThread(
-                    messageSupplier,
-                    executor,
-                    errorHandler
+                    appName,
+                    messagingAdapter,
+                    listeners
             );
             thread.setName("priap-listener-"+i);
             thread.start();
@@ -58,6 +55,7 @@ class ListenerSupervisor implements Closeable, Runnable {
             }
         }
     }
+
 
 
 }

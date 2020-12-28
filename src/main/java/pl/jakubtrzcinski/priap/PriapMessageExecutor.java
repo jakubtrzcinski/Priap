@@ -1,7 +1,10 @@
 package pl.jakubtrzcinski.priap;
 
 import lombok.RequiredArgsConstructor;
+import pl.jakubtrzcinski.priap.api.EventListener;
 import pl.jakubtrzcinski.priap.dto.PriapMessage;
+
+import java.util.List;
 
 /**
  * @author Jakub Trzcinski kuba@valueadd.pl
@@ -10,18 +13,28 @@ import pl.jakubtrzcinski.priap.dto.PriapMessage;
 @RequiredArgsConstructor
 class PriapMessageExecutor {
 
-    private final PriapMessageMapper mapper;
-
     private final ListenerCollection listenerCollection;
 
-    void execute(PriapMessage message) throws Exception {
+    public PriapMessageExecutor(List<EventListener> listeners) {
+        listenerCollection = new ListenerCollection(listeners);
+    }
 
-        var object = mapper.map(message);
+    void execute(PriapMessage message) {
 
-        var listeners = listenerCollection.findAllByEventType(object.getClass());
+        var event = message.getContent();
 
         //noinspection unchecked
-        listeners.forEach(e->e.process(object));
+        listenerCollection.findAllByEventType(event.getClass())
+                .stream()
+                .filter(e -> message.getInvokeOn() == null || message.getInvokeOn().contains(e.getClass()))
+                .forEach(e -> {
+                    try {
+                        e.process(event);
+                    } catch (Exception ex){
+                    }
+                });
+
+
     }
 
 }

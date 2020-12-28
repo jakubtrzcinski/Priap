@@ -1,41 +1,62 @@
 package pl.jakubtrzcinski.priap;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import pl.jakubtrzcinski.priap.api.EventErrorHandler;
-import pl.jakubtrzcinski.priap.dto.PriapMessage;
+import lombok.extern.slf4j.Slf4j;
+import pl.jakubtrzcinski.priap.api.EventListener;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.function.Supplier;
+import java.util.List;
 
 /**
  * @author Jakub Trzcinski kuba@valueadd.pl
  * @since 27-12-2020
  */
-@RequiredArgsConstructor
+@Slf4j
 class ListenerThread extends Thread implements Closeable {
 
-    private final Supplier<PriapMessage> messageSupplier;
+    private final String queueName;
 
-    private final PriapMessageExecutor executor;
+    private final MessagingAdapter messagingAdapter;
 
-    private final EventErrorHandler eventErrorHandler;
+    private final ListenerCollection listenerCollection;
 
     @Getter
     private boolean running = true;
 
+    public ListenerThread(
+            String queueName,
+            MessagingAdapter messagingAdapter,
+            List<EventListener> listeners
+    ) {
+        this.queueName = queueName;
+        this.messagingAdapter = messagingAdapter;
+        this.listenerCollection = new ListenerCollection(listeners);
+    }
+
+
     @Override
     public void run() {
         while (running) {
-            try {
-                var message = messageSupplier.get();
-                if (message != null) {
-                    executor.execute(message);
-                }
-            } catch (Exception e) {
-                eventErrorHandler.handle(e);
+            var message = messagingAdapter.recieve();
+            if (message == null) {
+                continue;
             }
+
+
+            var event = message.getContent();
+            listenerCollection.findAllByEventType(event.getClass())
+                    .stream()
+                    .filter(e -> message.getInvokeOn() == null || message.getInvokeOn().contains(e.getClass()))
+                    .forEach(e -> {
+                        try {
+                            //noinspection unchecked
+                            e.process(event);
+                        } catch (Exception ex) {
+                            log.error("An error ocurred during event handling "+event.toString(), ex);
+                            messagingAdapter.sendToHospital(message.withInvokeOn(List.of(e.getClass())));
+                        }
+                    });
         }
         running = false;
     }
