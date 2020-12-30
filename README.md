@@ -9,6 +9,8 @@ TODO
 ## Requirements
 [Spring AMQP](https://github.com/spring-projects/spring-amqp)
 
+[Running RabbitMQ Instance](https://www.rabbitmq.com/)
+
 ## Instalation
 
 ### Maven 
@@ -64,10 +66,14 @@ return priapSession;
 
 ```properties
 priap.threads=10 #Define how much listener threads should be created
+spring.rabbitmq.username=rabbit
+spring.rabbitmq.password=rabbit
+spring.rabbitmq.host=localhost
+spring.rabbitmq.port=5671
 ```
 ## Spring Example
 
-#### Example event 
+#### Event 
 _NOTE:_ All events has to be `Serializable`!
 ```java
 @Getter
@@ -77,7 +83,7 @@ class ExampleEvent implements Serializable {
 }
 ```
 
-#### Example listener
+#### Listener
 ```java
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -93,3 +99,40 @@ public class ExampleEventListener implements EventListener<ExampleEvent> {
     }
 }
 ```
+
+#### Event dispatching
+```java
+import lombok.RequiredArgsConstructor;
+import pl.jakubtrzcinski.priap.api.EventDispatcher;
+
+@RequiredArgsConstructor
+class FooService  {
+
+    private final EventDispatcher eventDispatcher;
+    
+    public void foo() {
+        eventDispatcher.dispatch(new ExampleEvent("Hello World"));
+    }
+}
+```
+
+#### Reruning failed events from hospital
+
+*NOTE:* _All events from hospital are reruned after Piriap Session is created_
+
+```java
+import lombok.RequiredArgsConstructor;
+import pl.jakubtrzcinski.priap.PriapSession;
+
+@RequiredArgsConstructor
+class FooService  {
+
+    private final PriapSession session;
+
+    public void foo() {
+        session.rerunFromHospital();
+    }
+}
+```
+
+
