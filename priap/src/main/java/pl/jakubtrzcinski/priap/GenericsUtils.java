@@ -7,7 +7,7 @@ import java.lang.reflect.ParameterizedType;
 
 
 @UtilityClass
-public class GenericsUtils {
+class GenericsUtils {
     public Class<?> getGeneric(EventListener obj){
         return (Class<?>) ((ParameterizedType) obj.getClass()
                 .getGenericInterfaces()[0]).getActualTypeArguments()[0];
