@@ -1,3 +1,4 @@
+# Priap
 
 Simple distributed event dispatcher with persistent hospital for failed events execution based on [Spring AMQP](https://github.com/spring-projects/spring-amqp)
 
@@ -18,7 +19,12 @@ TODO
     <dependency>
         <groupId>pl.jakubtrzcinski</groupId>
         <artifactId>priap</artifactId>
-        <version>1.0.1.RELEASE</version>
+        <version>1.0.2.RELEASE</version>
+    </dependency>
+    <dependency>
+        <groupId>pl.jakubtrzcinski</groupId>
+        <artifactId>priap-api</artifactId>
+        <version>1.0.2.RELEASE</version>
     </dependency>
     <dependency>
         <groupId>org.springframework.amqp</groupId>
