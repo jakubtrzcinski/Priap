@@ -10,8 +10,9 @@ import pl.jakubtrzcinski.priap.dto.PriapMessage;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Map;
 
 /**
  * @author Jakub Trzcinski kuba@valueadd.pl
@@ -20,11 +21,7 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class PriapSession implements Closeable, Runnable, EventDispatcher {
 
-    private final String appName;
-
-    private final ListenerSupervisor listenerSupervisor;
-    private final AmqpMessagingAdapter messagingAdapter;
-
+    private final Map<Class, SimplePriapSession> sessions;
 
     public static PriapSession createForAmqp(
             String appName,
@@ -33,47 +30,42 @@ public class PriapSession implements Closeable, Runnable, EventDispatcher {
             RabbitAdmin rabbitAdmin,
             List<EventListener> listeners
     ) {
-        String exchangeName = "exchange";
-
-        var messagingAdapter = new AmqpMessagingAdapter(
-                "priap-"+exchangeName,
-                "priap-"+appName,
-                amqpTemplate,
-                rabbitAdmin
-        );
-        var listenerSupervisor = new ListenerSupervisor(
-                appName,
-                threadsCount,
-                messagingAdapter,
-                listeners
-        );
+        Map<Class, SimplePriapSession> sessions = new HashMap<>();
+        listeners.forEach(it->{
+            var eventClazz = GenericsUtils.getGeneric(it);
+            var session = SimplePriapSession.createForAmqp(
+                    appName+"-"+eventClazz.getSimpleName(),
+                    threadsCount,
+                    amqpTemplate,
+                    rabbitAdmin,
+                    List.of(it)
+            );
+            sessions.put(eventClazz, session);
+        });
         return new PriapSession(
-                appName,
-                listenerSupervisor,
-                messagingAdapter
+                sessions
         );
     }
 
     @Override
     public void run() {
-        listenerSupervisor.run();
+        sessions.values().forEach(SimplePriapSession::run);
     }
 
     @Override
     public void close() throws IOException {
-        listenerSupervisor.close();
+        for (SimplePriapSession simplePriapSession : sessions.values()) {
+            simplePriapSession.close();
+        }
     }
 
 
     @Override
     public void dispatch(Serializable event) {
-        messagingAdapter.send(new PriapMessage(
-                appName,
-                event
-        ));
+        sessions.get(event.getClass()).dispatch(event);
     }
 
     public void rerunFromHospital() {
-        messagingAdapter.runFromHospital();
+        sessions.values().forEach(SimplePriapSession::rerunFromHospital);
     }
 }

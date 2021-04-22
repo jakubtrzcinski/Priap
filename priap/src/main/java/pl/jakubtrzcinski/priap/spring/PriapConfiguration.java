@@ -5,7 +5,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import pl.jakubtrzcinski.priap.PriapSession;
+import pl.jakubtrzcinski.priap.SimplePriapSession;
 import pl.jakubtrzcinski.priap.api.EventListener;
 
 import java.util.List;
@@ -18,13 +18,13 @@ import java.util.List;
 class PriapConfiguration {
 
     @Bean
-    public PriapSession priapSession(
+    public SimplePriapSession priapSession(
             @Value("${spring.application.name:none}") String appName,
             @Value("${priap.threads:10}") int threads,
             RabbitTemplate amqpTemplate,
             List<EventListener> listeners
     ){
-        var priapSession = PriapSession.createForAmqp(
+        var priapSession = SimplePriapSession.createForAmqp(
                 appName,
                 threads,
                 amqpTemplate,

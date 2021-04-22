@@ -1,12 +1,12 @@
 package pl.jakubtrzcinski.app;
 
 import lombok.RequiredArgsConstructor;
-import pl.jakubtrzcinski.priap.PriapSession;
+import pl.jakubtrzcinski.priap.SimplePriapSession;
 
 @RequiredArgsConstructor
 class FooService  {
 
-    private final PriapSession session;
+    private final SimplePriapSession session;
 
     public void foo() {
         session.rerunFromHospital();

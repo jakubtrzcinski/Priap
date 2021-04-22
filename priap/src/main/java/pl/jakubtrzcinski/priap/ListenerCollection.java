@@ -13,7 +13,7 @@ import java.util.Map;
  */
 @SuppressWarnings("rawtypes")
 class ListenerCollection {
-    private final Map<Class, List<EventListener>> listeners = new HashMap<>();
+    private final Map<String, List<EventListener>> listeners = new HashMap<>();
 
 
     public ListenerCollection(List<EventListener> listeners) {
@@ -22,11 +22,11 @@ class ListenerCollection {
 
     public List<EventListener> findAllByEventType(Class clazz){
         return new LinkedList<>(
-                listeners.getOrDefault(clazz, new LinkedList<>())
+                listeners.getOrDefault(clazz.getName(), new LinkedList<>())
         );
     }
     public void register(EventListener eventListener){
-        var clazz = GenericsUtils.getGeneric(eventListener);
+        var clazz = GenericsUtils.getGeneric(eventListener).getName();
         if(!listeners.containsKey(clazz)){
             listeners.put(clazz, new LinkedList<>());
         }
